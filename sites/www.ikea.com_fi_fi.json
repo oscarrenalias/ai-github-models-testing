@@ -1,0 +1,66 @@
+{
+  "pages": {
+    "https://www.ikea.com/fi/fi/": {
+      "page_type": "homepage",
+      "actions": [
+        {
+          "type": "link",
+          "purpose": "Navigate to homepage",
+          "details": "https://www.ikea.com/fi/fi/"
+        },
+        {
+          "type": "input",
+          "purpose": "Search input field",
+          "details": "Input field with name 'search_term_string' for entering search terms"
+        },
+        {
+          "type": "form",
+          "purpose": "Search form submission",
+          "details": "Form for searching products with action URL '/fi/fi/search' and query parameter 'q'"
+        }
+      ],
+      "search_form": {
+        "action": "https://www.ikea.com/fi/fi/search/",
+        "params": [
+          "q",
+          "search_term_string"
+        ]
+      }
+    }
+  },
+  "search_detected": true,
+  "search_details": {
+    "action": "https://www.ikea.com/fi/fi/search/",
+    "params": [
+      "q",
+      "search_term_string"
+    ]
+  },
+  "search_test_results": {
+    "page_type": "search results",
+    "actions": [
+      {
+        "type": "link",
+        "purpose": "various navigation links",
+        "details": "Includes links to styles, scripts, and external resources"
+      },
+      {
+        "type": "form",
+        "purpose": "search products",
+        "details": "Allows searching of products using a search bar"
+      },
+      {
+        "type": "button",
+        "purpose": "submit search or interact with page elements",
+        "details": "Search-related submit or interactive buttons"
+      }
+    ],
+    "search_form": {
+      "action": "https://sik.search.blue.cdtapps.com",
+      "params": [
+        "q",
+        "locale"
+      ]
+    }
+  }
+}

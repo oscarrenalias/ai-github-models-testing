@@ -2,6 +2,8 @@ import sys
 import json
 import llm
 import logging
+import os
+from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
 # Set up logging
@@ -9,6 +11,31 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 BASE_URL = sys.argv[1]
 SEARCH_TEST_QUERY = "test"
+
+def get_safe_filename(url):
+    """Convert URL to a safe filename."""
+    parsed = urlparse(url)
+    # Use domain + path, replace unsafe characters
+    domain = parsed.netloc
+    path = parsed.path.strip('/').replace('/', '_')
+    
+    # Create base filename from domain
+    if path:
+        filename = f"{domain}_{path}"
+    else:
+        filename = domain
+    
+    # Replace unsafe characters
+    unsafe_chars = '<>:"/\\|?*'
+    for char in unsafe_chars:
+        filename = filename.replace(char, '_')
+    
+    # Remove consecutive underscores and trailing dots/spaces
+    while '__' in filename:
+        filename = filename.replace('__', '_')
+    filename = filename.strip('._')
+    
+    return f"{filename}.json"
 
 model = llm.get_model("github/gpt-4o")
 results = {
@@ -148,9 +175,17 @@ with sync_playwright() as p:
 
     browser.close()
 
-# Save results
-with open("results.json", "w", encoding="utf-8") as f:
+# Save results to sites folder
+sites_dir = "sites"
+os.makedirs(sites_dir, exist_ok=True)
+
+filename = get_safe_filename(BASE_URL)
+output_path = os.path.join(sites_dir, filename)
+
+with open(output_path, "w", encoding="utf-8") as f:
     json.dump(results, f, indent=2)
+
+logging.info(f"Results saved to: {output_path}")
 
 # Exit with error code if any errors occurred
 if has_errors:

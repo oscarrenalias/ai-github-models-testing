@@ -1,0 +1,64 @@
+{
+  "pages": {
+    "http://wikipedia.org": {
+      "page_type": "homepage",
+      "actions": [
+        {
+          "type": "form",
+          "purpose": "search the encyclopedia",
+          "details": "contains input field with name 'search' and a submit button"
+        },
+        {
+          "type": "link",
+          "purpose": "navigate to Wikipedia articles in various languages",
+          "details": "multiple links displayed on the homepage for languages"
+        },
+        {
+          "type": "link",
+          "purpose": "navigate to sister projects",
+          "details": "links to Wikimedia Foundation projects like Wikibooks, Wiktionary, etc."
+        },
+        {
+          "type": "button",
+          "purpose": "submit search query",
+          "details": "search submit button associated with search form"
+        }
+      ],
+      "search_form": {
+        "action": "/search-redirect.php",
+        "params": [
+          "search"
+        ]
+      }
+    }
+  },
+  "search_detected": true,
+  "search_details": {
+    "action": "/search-redirect.php",
+    "params": [
+      "search"
+    ]
+  },
+  "search_test_results": {
+    "page_type": "search results",
+    "actions": [
+      {
+        "type": "form",
+        "purpose": "Search functionality",
+        "details": "Main search bar for the website"
+      },
+      {
+        "type": "link",
+        "purpose": "Navigation",
+        "details": "Category and topic links within the page"
+      }
+    ],
+    "search_form": {
+      "action": "/w/index.php",
+      "params": [
+        "search",
+        "title"
+      ]
+    }
+  }
+}

@@ -1,42 +1,63 @@
 name: Site Analysis with Search Detection
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'Website URL to analyze'
+        required: true
+        default: 'https://wikipedia.org'
+        type: string
 
 permissions:
-  contents: read
+  contents: write
   models: read
 
 jobs:
   analyze_site:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      - name: Install uv
+      - name: ⚡ Install uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: |
           uv sync
           uv run playwright install --with-deps chromium
 
-      - name: Run Playwright crawler & analysis
+      - name: 🕷️ Run Playwright crawler & analysis
         env:
           GITHUB_MODELS_KEY: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          uv run python analyze_site.py https://wikipedia.org
+          uv run python analyze_site.py "${{ inputs.site_url }}"
 
-      - name: Output results
-        run: cat results.json
+      - name: ⚙️ Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-      - name: Upload analysis results
+      - name: 💾 Commit analysis results
+        run: |
+          # Check if there are any changes to commit
+          if [[ -n $(git status --porcelain sites/) ]]; then
+            git add sites/*.json
+            git commit -m "Add site analysis for ${{ inputs.site_url }}"
+            git push
+            echo "Analysis results committed and pushed to repository"
+          else
+            echo "No new analysis files to commit"
+          fi
+
+      - name: 📁 Upload analysis results
         uses: actions/upload-artifact@v4
         with:
           name: site-analysis-results
-          path: results.json
+          path: sites/*.json
           retention-days: 30
