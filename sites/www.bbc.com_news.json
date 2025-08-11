@@ -1,0 +1,38 @@
+{
+  "pages": {
+    "https://www.bbc.com/news": {
+      "page_type": "homepage",
+      "actions": [
+        {
+          "type": "link",
+          "purpose": "Navigation to news articles",
+          "details": "Various links to news stories and categories"
+        },
+        {
+          "type": "form",
+          "purpose": "Search functionality",
+          "details": "Search form for entering queries"
+        },
+        {
+          "type": "button",
+          "purpose": "Toggle user settings or menus",
+          "details": "Possible interactive buttons on the page"
+        }
+      ],
+      "search_form": {
+        "action": "/",
+        "params": [
+          "q"
+        ]
+      }
+    }
+  },
+  "search_detected": true,
+  "search_details": {
+    "action": "/",
+    "params": [
+      "q"
+    ]
+  },
+  "search_test_results": null
+}
