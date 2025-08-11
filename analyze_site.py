@@ -21,6 +21,8 @@ has_errors = False
 
 def analyze_page(url, html):
     """Send page HTML to LLM to classify and detect operations."""
+    global has_errors
+    
     prompt = f"""
 You are analyzing a website page. Identify:
 
@@ -54,12 +56,10 @@ Example response format:
     except json.JSONDecodeError as e:
         logging.error(f"Failed to parse JSON from LLM response: {e}")
         logging.error(f"Raw LLM response: {response_text}")
-        global has_errors
         has_errors = True
         return {"error": "Failed to parse LLM output"}
     except Exception as e:
         logging.error(f"Error in analyze_page: {e}")
-        global has_errors
         has_errors = True
         return {"error": f"Failed to analyze page: {str(e)}"}
 
