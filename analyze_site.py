@@ -24,38 +24,65 @@ def analyze_page(url, html):
     global has_errors
     
     prompt = f"""
-You are analyzing a website page. Identify:
+You are analyzing a website page. Look carefully for search functionality.
 
-1. Page type (homepage, product page, cart, search results, etc.).
-2. All user actions (buttons, forms, links), with their purpose.
-3. If there is a search function, give form action URL and parameter names.
+Analyze this HTML and identify:
+1. Page type (homepage, product page, cart, search results, etc.)
+2. All interactive elements (forms, buttons, links) and their purpose
+3. IMPORTANT: Search functionality - look for:
+   - Input fields with type="search" or names like "search", "query", "q"
+   - Form elements that might be used for searching
+   - Submit buttons associated with search inputs
 
-IMPORTANT: Return ONLY valid JSON with no markdown formatting, no code blocks, no explanations, and no additional text.
+For search forms, provide:
+- The form's action URL (or current page if no action specified)
+- All relevant input parameter names (especially search-related ones)
 
-Return JSON with keys: page_type, actions[], search_form{{action, params[]}}.
+Return ONLY valid JSON with no markdown formatting, code blocks, or explanations.
 
-Example response format:
-{{"page_type": "homepage", "actions": [], "search_form": null}}
+Required JSON structure:
+{{
+  "page_type": "string",
+  "actions": [
+    {{"type": "form|button|link", "purpose": "description", "details": "additional info"}}
+  ],
+  "search_form": {{
+    "action": "url_or_path",
+    "params": ["param1", "param2"]
+  }} OR null if no search found
+}}
+
+Be very thorough in looking for search functionality. Even if it's not obvious, check for any input fields that could be used for search.
 """
     try:
         logging.info(f"Analyzing page: {url}")
-        resp = model.prompt(prompt + "\n\nHTML:\n" + html[:5000])
+        # Send more HTML content for better analysis
+        html_snippet = html[:8000]  # Increased from 5000
+        resp = model.prompt(prompt + "\n\nHTML to analyze:\n" + html_snippet)
         response_text = resp.text().strip()
         logging.debug(f"LLM response: {response_text}")
         
         # Try to extract JSON from markdown code blocks if present
         if "```json" in response_text:
-            # Extract content between ```json and ```
             start = response_text.find("```json") + 7
             end = response_text.find("```", start)
             if end != -1:
                 response_text = response_text[start:end].strip()
                 logging.debug(f"Extracted JSON from code block: {response_text}")
         
-        return json.loads(response_text)
+        result = json.loads(response_text)
+        
+        # Log the analysis result for debugging
+        if result.get("search_form"):
+            logging.info(f"Search form detected: {result['search_form']}")
+        else:
+            logging.info("No search form detected in this analysis")
+            
+        return result
+        
     except json.JSONDecodeError as e:
         logging.error(f"Failed to parse JSON from LLM response: {e}")
-        logging.error(f"Raw LLM response: {response_text}")
+        logging.error(f"Raw LLM response (first 500 chars): {response_text[:500]}")
         has_errors = True
         return {"error": "Failed to parse LLM output"}
     except Exception as e:
@@ -86,11 +113,31 @@ with sync_playwright() as p:
             if page.locator(selector).count() > 0:
                 logging.info(f"Found search input, filling with: {SEARCH_TEST_QUERY}")
                 page.fill(selector, SEARCH_TEST_QUERY)
-                page.keyboard.press("Enter")
-                page.wait_for_load_state("networkidle")
-                search_html = page.content()
-                search_analysis = analyze_page(BASE_URL + " (search results)", search_html)
-                results["search_test_results"] = search_analysis
+                
+                # Wait for navigation to start, then complete
+                with page.expect_navigation(timeout=30000):
+                    page.keyboard.press("Enter")
+                
+                # Additional wait to ensure page is fully loaded
+                page.wait_for_load_state("domcontentloaded")
+                page.wait_for_timeout(2000)  # Wait 2 seconds for any dynamic content
+                
+                try:
+                    search_html = page.content()
+                    search_analysis = analyze_page(BASE_URL + " (search results)", search_html)
+                    results["search_test_results"] = search_analysis
+                except Exception as content_error:
+                    logging.error(f"Failed to get search results content: {content_error}")
+                    # Try one more time after a longer wait
+                    page.wait_for_timeout(3000)
+                    try:
+                        search_html = page.content()
+                        search_analysis = analyze_page(BASE_URL + " (search results)", search_html)
+                        results["search_test_results"] = search_analysis
+                    except Exception as retry_error:
+                        logging.error(f"Retry failed: {retry_error}")
+                        has_errors = True
+                        results["search_test_results"] = {"error": f"Failed to capture search results: {str(retry_error)}"}
             else:
                 logging.warning(f"No search input found with selector: {selector}")
         except Exception as e:
