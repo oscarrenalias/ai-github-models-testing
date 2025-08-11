@@ -17,6 +17,7 @@ results = {
     "search_details": None,
     "search_test_results": None
 }
+has_errors = False
 
 def analyze_page(url, html):
     """Send page HTML to LLM to classify and detect operations."""
@@ -53,9 +54,13 @@ Example response format:
     except json.JSONDecodeError as e:
         logging.error(f"Failed to parse JSON from LLM response: {e}")
         logging.error(f"Raw LLM response: {response_text}")
+        global has_errors
+        has_errors = True
         return {"error": "Failed to parse LLM output"}
     except Exception as e:
         logging.error(f"Error in analyze_page: {e}")
+        global has_errors
+        has_errors = True
         return {"error": f"Failed to analyze page: {str(e)}"}
 
 with sync_playwright() as p:
@@ -91,6 +96,7 @@ with sync_playwright() as p:
         except Exception as e:
             logging.error(f"Error during search form interaction: {e}")
             logging.error(f"Search form details: {analysis.get('search_form')}")
+            has_errors = True
             results["search_test_results"] = {"error": str(e)}
 
     browser.close()
@@ -98,3 +104,11 @@ with sync_playwright() as p:
 # Save results
 with open("results.json", "w", encoding="utf-8") as f:
     json.dump(results, f, indent=2)
+
+# Exit with error code if any errors occurred
+if has_errors:
+    logging.error("Script completed with errors")
+    sys.exit(1)
+else:
+    logging.info("Script completed successfully")
+    sys.exit(0)

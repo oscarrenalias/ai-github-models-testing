@@ -26,6 +26,8 @@ jobs:
           uv run playwright install --with-deps chromium
 
       - name: Run Playwright crawler & analysis
+        env:
+          GITHUB_MODELS_KEY: ${{ secrets.GITHUB_TOKEN }}
         run: |
           uv run python analyze_site.py https://wikipedia.org
 
